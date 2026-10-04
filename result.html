@@ -1,9 +1,7 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 
 <head>
-
     <meta charset="UTF-8">
 
     <meta
@@ -15,7 +13,6 @@
     <link
         rel="stylesheet"
         href="style.css">
-
 </head>
 
 
@@ -26,7 +23,6 @@
 
     <h2>グループ名</h2>
 
-
     <input
         type="text"
         id="groupName"
@@ -35,22 +31,16 @@
 
     <h2>メンバーで絞り込む</h2>
 
-
     <p>
-        メンバーを下のエリアにドラッグしてください
+        メンバーを指でドラッグしてください
     </p>
 
-
-    <!-- ドラッグ元 -->
 
     <div
         id="memberDragArea"
         class="member-drag-area">
-
     </div>
 
-
-    <!-- ドロップ先 -->
 
     <div
         id="selectedMembers"
@@ -66,29 +56,37 @@
     <button
         class="small-button"
         onclick="clearFilter()">
+
         絞り込みを解除
+
     </button>
 
-
-    <!-- 結果 -->
 
     <div id="result"></div>
 
 
     <button
         onclick="saveGroups()">
+
         保存
+
     </button>
 
 
     <button
         class="back-button"
         onclick="location.href='generate.html'">
+
         戻る
+
     </button>
 
 
     <script>
+
+        /* =========================
+           メンバー取得
+           ========================= */
 
         const members =
             JSON.parse(
@@ -117,7 +115,7 @@
 
 
         /* =========================
-           コンビ名を保存
+           コンビ名保存データ
            ========================= */
 
         const savedCombinationNames =
@@ -137,7 +135,7 @@
 
 
         /* =========================
-           現在の絞り込み
+           選択中メンバー
            ========================= */
 
         let selectedNames = [];
@@ -166,6 +164,10 @@
         }
 
 
+        /* =========================
+           ドラッグできるメンバー
+           ========================= */
+
         function createDraggableMember(
             member
         ) {
@@ -178,10 +180,6 @@
 
             card.className =
                 "draggable-member";
-
-
-            card.draggable =
-                true;
 
 
             card.dataset.name =
@@ -222,6 +220,18 @@
             );
 
 
+            memberDragArea.appendChild(
+                card
+            );
+
+
+            /* =========================
+               PC用ドラッグ
+               ========================= */
+
+            card.draggable = true;
+
+
             card.addEventListener(
                 "dragstart",
                 function(event) {
@@ -235,15 +245,311 @@
             );
 
 
-            memberDragArea.appendChild(
-                card
+            /* =========================
+               スマホ用ドラッグ
+               ========================= */
+
+            setupTouchDrag(
+                card,
+                member.name
             );
 
         }
 
 
         /* =========================
-           ドロップ
+           スマホ用ドラッグ処理
+           ========================= */
+
+        function setupTouchDrag(
+            element,
+            memberName
+        ) {
+
+            let dragging = false;
+
+            let ghost = null;
+
+
+            element.addEventListener(
+                "pointerdown",
+                function(event) {
+
+                    /*
+                     * マウスの通常クリックは
+                     * PCのドラッグ処理に任せる
+                     */
+
+                    if (
+                        event.pointerType
+                        ===
+                        "mouse"
+                    ) {
+                        return;
+                    }
+
+
+                    dragging = true;
+
+
+                    /*
+                     * 指を画面から離しても
+                     * ドラッグを追跡する
+                     */
+
+                    element.setPointerCapture(
+                        event.pointerId
+                    );
+
+
+                    /*
+                     * ドラッグ中のコピー
+                     */
+
+                    ghost =
+                        element.cloneNode(
+                            true
+                        );
+
+
+                    ghost.classList.add(
+                        "drag-ghost"
+                    );
+
+
+                    ghost.style.position =
+                        "fixed";
+
+                    ghost.style.left =
+                        event.clientX -
+                        40 +
+                        "px";
+
+                    ghost.style.top =
+                        event.clientY -
+                        40 +
+                        "px";
+
+                    ghost.style.pointerEvents =
+                        "none";
+
+                    ghost.style.zIndex =
+                        "9999";
+
+                    document.body.appendChild(
+                        ghost
+                    );
+
+                }
+            );
+
+
+            element.addEventListener(
+                "pointermove",
+                function(event) {
+
+                    if (
+                        !dragging
+                    ) {
+                        return;
+                    }
+
+
+                    /*
+                     * コピーを指についてこさせる
+                     */
+
+                    if (
+                        ghost
+                    ) {
+
+                        ghost.style.left =
+                            event.clientX -
+                            40 +
+                            "px";
+
+                        ghost.style.top =
+                            event.clientY -
+                            40 +
+                            "px";
+
+                    }
+
+
+                    /*
+                     * 指が選択エリアの上に
+                     * 来ているか確認
+                     */
+
+                    const rect =
+                        selectedMembersArea.getBoundingClientRect();
+
+
+                    const inside =
+                        event.clientX >=
+                            rect.left &&
+
+                        event.clientX <=
+                            rect.right &&
+
+                        event.clientY >=
+                            rect.top &&
+
+                        event.clientY <=
+                            rect.bottom;
+
+
+                    if (
+                        inside
+                    ) {
+
+                        selectedMembersArea.classList.add(
+                            "drag-over"
+                        );
+
+                    } else {
+
+                        selectedMembersArea.classList.remove(
+                            "drag-over"
+                        );
+
+                    }
+
+                }
+            );
+
+
+            element.addEventListener(
+                "pointerup",
+                function(event) {
+
+                    if (
+                        !dragging
+                    ) {
+                        return;
+                    }
+
+
+                    dragging = false;
+
+
+                    if (
+                        ghost
+                    ) {
+
+                        ghost.remove();
+
+                        ghost = null;
+
+                    }
+
+
+                    selectedMembersArea.classList.remove(
+                        "drag-over"
+                    );
+
+
+                    /*
+                     * 指を離した場所が
+                     * 選択エリアか確認
+                     */
+
+                    const rect =
+                        selectedMembersArea.getBoundingClientRect();
+
+
+                    const inside =
+                        event.clientX >=
+                            rect.left &&
+
+                        event.clientX <=
+                            rect.right &&
+
+                        event.clientY >=
+                            rect.top &&
+
+                        event.clientY <=
+                            rect.bottom;
+
+
+                    if (
+                        inside
+                    ) {
+
+                        addSelectedMember(
+                            memberName
+                        );
+
+                    }
+
+                }
+            );
+
+
+            element.addEventListener(
+                "pointercancel",
+                function() {
+
+                    dragging = false;
+
+
+                    if (
+                        ghost
+                    ) {
+
+                        ghost.remove();
+
+                        ghost = null;
+
+                    }
+
+
+                    selectedMembersArea.classList.remove(
+                        "drag-over"
+                    );
+
+                }
+            );
+
+        }
+
+
+        /* =========================
+           選択メンバー追加
+           ========================= */
+
+        function addSelectedMember(
+            name
+        ) {
+
+            if (
+                name === ""
+            ) {
+                return;
+            }
+
+
+            if (
+                selectedNames.includes(
+                    name
+                )
+            ) {
+                return;
+            }
+
+
+            selectedNames.push(
+                name
+            );
+
+
+            updateFilter();
+
+        }
+
+
+        /* =========================
+           PC用ドロップ
            ========================= */
 
         selectedMembersArea.addEventListener(
@@ -291,32 +597,9 @@
                     );
 
 
-                if (
-                    name === ""
-                ) {
-
-                    return;
-
-                }
-
-
-                if (
-                    selectedNames.includes(
-                        name
-                    )
-                ) {
-
-                    return;
-
-                }
-
-
-                selectedNames.push(
+                addSelectedMember(
                     name
                 );
-
-
-                updateFilter();
 
             }
         );
@@ -332,8 +615,14 @@
                 "";
 
 
+            /*
+             * 選択なし
+             */
+
             if (
-                selectedNames.length === 0
+                selectedNames.length
+                ===
+                0
             ) {
 
                 const hint =
@@ -366,7 +655,7 @@
 
 
             /*
-             * 選択メンバーを表示
+             * 選択中メンバーを表示
              */
 
             for (
@@ -485,7 +774,7 @@
 
 
             /*
-             * 全員含む組み合わせだけ
+             * 条件に合うコンビだけ表示
              */
 
             const filtered =
@@ -522,7 +811,7 @@
 
 
         /* =========================
-           組み合わせ生成
+           全組み合わせを作る
            ========================= */
 
         for (
@@ -547,12 +836,15 @@
         ) {
 
             if (
-                combination.length === size
+                combination.length
+                ===
+                size
             ) {
 
                 allCombinations.push(
                     [...combination]
                 );
+
 
                 return;
 
@@ -585,7 +877,7 @@
 
 
         /* =========================
-           組み合わせキー
+           組み合わせのキー
            ========================= */
 
         function getCombinationKey(
@@ -606,14 +898,15 @@
 
 
         /* =========================
-           結果表示
+           コンビ表示
            ========================= */
 
         function displayCombinations(
             combinations
         ) {
 
-            result.innerHTML = "";
+            result.innerHTML =
+                "";
 
 
             for (
@@ -717,10 +1010,6 @@
                     );
 
 
-                /*
-                 * 以前の名前を復元
-                 */
-
                 if (
                     combinationNames.has(
                         key
@@ -734,10 +1023,6 @@
 
                 }
 
-
-                /*
-                 * 入力した瞬間に保存
-                 */
 
                 input.addEventListener(
                     "input",
@@ -781,8 +1066,6 @@
         }
 
 
-        /* 最初は全部表示 */
-
         displayCombinations(
             allCombinations
         );
@@ -803,7 +1086,7 @@
 
 
         /* =========================
-           グループ保存
+           保存
            ========================= */
 
         function saveGroups() {
@@ -825,6 +1108,7 @@
                     "グループ名を入力してください。"
                 );
 
+
                 return;
 
             }
@@ -844,6 +1128,7 @@
                     "保存するコンビがありません。"
                 );
 
+
                 return;
 
             }
@@ -856,10 +1141,6 @@
                     )
                 ) || [];
 
-
-            /*
-             * 表示されている組み合わせだけ保存
-             */
 
             for (
                 let card
