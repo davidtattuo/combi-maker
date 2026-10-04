@@ -1,0 +1,107 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>コンビメーカー</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css">
+
+</head>
+
+
+<body>
+
+    <h1>コンビメーカー</h1>
+
+    <p>
+        メンバーを組み合わせて
+        コンビを作ろう！
+    </p>
+
+
+    <button
+        onclick="location.href='generate.html'">
+        コンビ生成
+    </button>
+
+
+    <button
+        onclick="location.href='list.html'">
+        グループ一覧
+    </button>
+
+
+    <button
+        onclick="location.href='settings.html'">
+        設定
+    </button>
+
+
+    <script>
+
+        loadSettings();
+
+
+        function loadSettings() {
+
+            const fontSize =
+                localStorage.getItem(
+                    "fontSize"
+                );
+
+
+            if (
+                fontSize === "large"
+            ) {
+
+                document.body.classList.add(
+                    "large-font"
+                );
+
+            }
+
+
+            if (
+                fontSize === "small"
+            ) {
+
+                document.body.classList.add(
+                    "small-font"
+                );
+
+            }
+
+
+            const theme =
+                localStorage.getItem(
+                    "backgroundColor"
+                );
+
+
+            if (
+                theme !== null
+            ) {
+
+                document.body.classList.add(
+                    "theme-" + theme
+                );
+
+            }
+
+        }
+
+    </script>
+
+</body>
+
+</html>

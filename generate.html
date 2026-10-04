@@ -1,0 +1,455 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>メンバー登録</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css">
+
+</head>
+
+
+<body>
+
+    <h1>メンバー登録</h1>
+
+
+    <p>
+        写真と名前を登録してください
+    </p>
+
+
+    <div id="memberInputs"></div>
+
+
+    <button
+        onclick="addMember()">
+        ＋ メンバーを追加
+    </button>
+
+
+    <button
+        onclick="deleteMember()">
+        − メンバーを削除
+    </button>
+
+
+    <button
+        onclick="createCombination()">
+        コンビ生成
+    </button>
+
+
+    <button
+        class="back-button"
+        onclick="location.href='index.html'">
+        ホームに戻る
+    </button>
+
+
+    <script>
+
+        let memberCount = 0;
+
+
+        /* =========================
+           デフォルト画像
+           ========================= */
+
+        function createDefaultImage() {
+
+            return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Crect width='120' height='120' rx='60' fill='%23ddd'/%3E%3Ctext x='60' y='70' text-anchor='middle' font-size='45'%3E%3F%3C/text%3E%3C/svg%3E";
+
+        }
+
+
+        /* =========================
+           メンバー追加
+           ========================= */
+
+        function addMember(
+            name = "",
+            photo = ""
+        ) {
+
+            memberCount++;
+
+
+            const card =
+                document.createElement(
+                    "div"
+                );
+
+
+            card.className =
+                "member-input-card";
+
+
+            card.dataset.id =
+                memberCount;
+
+
+            /* 写真 */
+
+            const preview =
+                document.createElement(
+                    "img"
+                );
+
+
+            preview.className =
+                "member-preview";
+
+
+            preview.src =
+                photo ||
+                createDefaultImage();
+
+
+            /* 写真選択 */
+
+            const fileInput =
+                document.createElement(
+                    "input"
+                );
+
+
+            fileInput.type =
+                "file";
+
+
+            fileInput.accept =
+                "image/*";
+
+
+            fileInput.className =
+                "photo-input";
+
+
+            fileInput.addEventListener(
+                "change",
+                function() {
+
+                    const file =
+                        fileInput.files[0];
+
+
+                    if (!file) {
+
+                        return;
+
+                    }
+
+
+                    if (
+                        !file.type.startsWith(
+                            "image/"
+                        )
+                    ) {
+
+                        alert(
+                            "画像ファイルを選択してください。"
+                        );
+
+                        return;
+
+                    }
+
+
+                    const reader =
+                        new FileReader();
+
+
+                    reader.onload =
+                        function() {
+
+                            preview.src =
+                                reader.result;
+
+                        };
+
+
+                    reader.readAsDataURL(
+                        file
+                    );
+
+                }
+            );
+
+
+            /* 名前 */
+
+            const nameInput =
+                document.createElement(
+                    "input"
+                );
+
+
+            nameInput.type =
+                "text";
+
+
+            nameInput.placeholder =
+                "メンバー名";
+
+
+            nameInput.value =
+                name;
+
+
+            nameInput.className =
+                "member-name-input";
+
+
+            /* 配置 */
+
+            card.appendChild(
+                preview
+            );
+
+
+            card.appendChild(
+                fileInput
+            );
+
+
+            card.appendChild(
+                nameInput
+            );
+
+
+            document
+                .getElementById(
+                    "memberInputs"
+                )
+                .appendChild(
+                    card
+                );
+
+        }
+
+
+        /* =========================
+           最初のメンバー
+           ========================= */
+
+        addMember();
+
+
+        /* =========================
+           最後のメンバーを削除
+           ========================= */
+
+        function deleteMember() {
+
+            const cards =
+                document.querySelectorAll(
+                    ".member-input-card"
+                );
+
+
+            if (
+                cards.length <= 1
+            ) {
+
+                alert(
+                    "メンバーは1人以上必要です。"
+                );
+
+                return;
+
+            }
+
+
+            cards[
+                cards.length - 1
+            ].remove();
+
+        }
+
+
+        /* =========================
+           コンビ生成
+           ========================= */
+
+        function createCombination() {
+
+            const cards =
+                document.querySelectorAll(
+                    ".member-input-card"
+                );
+
+
+            const members = [];
+
+
+            for (
+                let card
+                of cards
+            ) {
+
+                const nameInput =
+                    card.querySelector(
+                        ".member-name-input"
+                    );
+
+
+                const photo =
+                    card.querySelector(
+                        ".member-preview"
+                    );
+
+
+                const name =
+                    nameInput.value.trim();
+
+
+                if (
+                    name !== ""
+                ) {
+
+                    members.push({
+
+                        name:
+                            name,
+
+                        photo:
+                            photo.src
+
+                    });
+
+                }
+
+            }
+
+
+            if (
+                members.length < 2
+            ) {
+
+                alert(
+                    "メンバーを2人以上入力してください。"
+                );
+
+                return;
+
+            }
+
+
+            /*
+             * 同じ名前がないか確認
+             */
+
+            const names =
+                members.map(
+                    function(member) {
+
+                        return member.name;
+
+                    }
+                );
+
+
+            const uniqueNames =
+                new Set(names);
+
+
+            if (
+                uniqueNames.size
+                !==
+                names.length
+            ) {
+
+                alert(
+                    "同じ名前のメンバーがいます。名前を変えてください。"
+                );
+
+                return;
+
+            }
+
+
+            localStorage.setItem(
+                "members",
+                JSON.stringify(
+                    members
+                )
+            );
+
+
+            location.href =
+                "result.html";
+
+        }
+
+
+        /* =========================
+           設定
+           ========================= */
+
+        loadSettings();
+
+
+        function loadSettings() {
+
+            const fontSize =
+                localStorage.getItem(
+                    "fontSize"
+                );
+
+
+            if (
+                fontSize === "large"
+            ) {
+
+                document.body.classList.add(
+                    "large-font"
+                );
+
+            }
+
+
+            if (
+                fontSize === "small"
+            ) {
+
+                document.body.classList.add(
+                    "small-font"
+                );
+
+            }
+
+
+            const theme =
+                localStorage.getItem(
+                    "backgroundColor"
+                );
+
+
+            if (
+                theme !== null
+            ) {
+
+                document.body.classList.add(
+                    "theme-" + theme
+                );
+
+            }
+
+        }
+
+    </script>
+
+</body>
+
+</html>

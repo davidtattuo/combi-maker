@@ -1,0 +1,1045 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>コンビ生成結果</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css">
+
+</head>
+
+
+<body>
+
+    <h1>コンビ生成結果</h1>
+
+
+    <h2>グループ名</h2>
+
+
+    <input
+        type="text"
+        id="groupName"
+        placeholder="例：サッカー部">
+
+
+    <h2>メンバーで絞り込む</h2>
+
+
+    <p>
+        メンバーを下のエリアにドラッグしてください
+    </p>
+
+
+    <!-- ドラッグ元 -->
+
+    <div
+        id="memberDragArea"
+        class="member-drag-area">
+
+    </div>
+
+
+    <!-- ドロップ先 -->
+
+    <div
+        id="selectedMembers"
+        class="selected-members">
+
+        <span class="filter-hint">
+            ここにメンバーをドラッグ
+        </span>
+
+    </div>
+
+
+    <button
+        class="small-button"
+        onclick="clearFilter()">
+        絞り込みを解除
+    </button>
+
+
+    <!-- 結果 -->
+
+    <div id="result"></div>
+
+
+    <button
+        onclick="saveGroups()">
+        保存
+    </button>
+
+
+    <button
+        class="back-button"
+        onclick="location.href='generate.html'">
+        戻る
+    </button>
+
+
+    <script>
+
+        const members =
+            JSON.parse(
+                localStorage.getItem(
+                    "members"
+                )
+            ) || [];
+
+
+        const result =
+            document.getElementById(
+                "result"
+            );
+
+
+        const memberDragArea =
+            document.getElementById(
+                "memberDragArea"
+            );
+
+
+        const selectedMembersArea =
+            document.getElementById(
+                "selectedMembers"
+            );
+
+
+        /* =========================
+           コンビ名を保存
+           ========================= */
+
+        const savedCombinationNames =
+            JSON.parse(
+                localStorage.getItem(
+                    "combinationNames"
+                )
+            ) || {};
+
+
+        const combinationNames =
+            new Map(
+                Object.entries(
+                    savedCombinationNames
+                )
+            );
+
+
+        /* =========================
+           現在の絞り込み
+           ========================= */
+
+        let selectedNames = [];
+
+
+        /* =========================
+           全組み合わせ
+           ========================= */
+
+        const allCombinations = [];
+
+
+        /* =========================
+           メンバー表示
+           ========================= */
+
+        for (
+            let member
+            of members
+        ) {
+
+            createDraggableMember(
+                member
+            );
+
+        }
+
+
+        function createDraggableMember(
+            member
+        ) {
+
+            const card =
+                document.createElement(
+                    "div"
+                );
+
+
+            card.className =
+                "draggable-member";
+
+
+            card.draggable =
+                true;
+
+
+            card.dataset.name =
+                member.name;
+
+
+            const image =
+                document.createElement(
+                    "img"
+                );
+
+
+            image.src =
+                member.photo;
+
+
+            image.className =
+                "drag-member-photo";
+
+
+            const name =
+                document.createElement(
+                    "span"
+                );
+
+
+            name.textContent =
+                member.name;
+
+
+            card.appendChild(
+                image
+            );
+
+
+            card.appendChild(
+                name
+            );
+
+
+            card.addEventListener(
+                "dragstart",
+                function(event) {
+
+                    event.dataTransfer.setData(
+                        "text/plain",
+                        member.name
+                    );
+
+                }
+            );
+
+
+            memberDragArea.appendChild(
+                card
+            );
+
+        }
+
+
+        /* =========================
+           ドロップ
+           ========================= */
+
+        selectedMembersArea.addEventListener(
+            "dragover",
+            function(event) {
+
+                event.preventDefault();
+
+
+                selectedMembersArea.classList.add(
+                    "drag-over"
+                );
+
+            }
+        );
+
+
+        selectedMembersArea.addEventListener(
+            "dragleave",
+            function() {
+
+                selectedMembersArea.classList.remove(
+                    "drag-over"
+                );
+
+            }
+        );
+
+
+        selectedMembersArea.addEventListener(
+            "drop",
+            function(event) {
+
+                event.preventDefault();
+
+
+                selectedMembersArea.classList.remove(
+                    "drag-over"
+                );
+
+
+                const name =
+                    event.dataTransfer.getData(
+                        "text/plain"
+                    );
+
+
+                if (
+                    name === ""
+                ) {
+
+                    return;
+
+                }
+
+
+                if (
+                    selectedNames.includes(
+                        name
+                    )
+                ) {
+
+                    return;
+
+                }
+
+
+                selectedNames.push(
+                    name
+                );
+
+
+                updateFilter();
+
+            }
+        );
+
+
+        /* =========================
+           フィルター更新
+           ========================= */
+
+        function updateFilter() {
+
+            selectedMembersArea.innerHTML =
+                "";
+
+
+            if (
+                selectedNames.length === 0
+            ) {
+
+                const hint =
+                    document.createElement(
+                        "span"
+                    );
+
+
+                hint.className =
+                    "filter-hint";
+
+
+                hint.textContent =
+                    "ここにメンバーをドラッグ";
+
+
+                selectedMembersArea.appendChild(
+                    hint
+                );
+
+
+                displayCombinations(
+                    allCombinations
+                );
+
+
+                return;
+
+            }
+
+
+            /*
+             * 選択メンバーを表示
+             */
+
+            for (
+                let name
+                of selectedNames
+            ) {
+
+                const chip =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                chip.className =
+                    "selected-member-chip";
+
+
+                const member =
+                    members.find(
+                        function(member) {
+
+                            return (
+                                member.name
+                                ===
+                                name
+                            );
+
+                        }
+                    );
+
+
+                if (
+                    member
+                ) {
+
+                    const image =
+                        document.createElement(
+                            "img"
+                        );
+
+
+                    image.src =
+                        member.photo;
+
+
+                    chip.appendChild(
+                        image
+                    );
+
+                }
+
+
+                const text =
+                    document.createElement(
+                        "span"
+                    );
+
+
+                text.textContent =
+                    name;
+
+
+                chip.appendChild(
+                    text
+                );
+
+
+                const remove =
+                    document.createElement(
+                        "button"
+                    );
+
+
+                remove.textContent =
+                    "×";
+
+
+                remove.className =
+                    "remove-filter-button";
+
+
+                remove.onclick =
+                    function() {
+
+                        selectedNames =
+                            selectedNames.filter(
+                                function(
+                                    selectedName
+                                ) {
+
+                                    return (
+                                        selectedName
+                                        !==
+                                        name
+                                    );
+
+                                }
+                            );
+
+
+                        updateFilter();
+
+                    };
+
+
+                chip.appendChild(
+                    remove
+                );
+
+
+                selectedMembersArea.appendChild(
+                    chip
+                );
+
+            }
+
+
+            /*
+             * 全員含む組み合わせだけ
+             */
+
+            const filtered =
+                allCombinations.filter(
+                    function(combination) {
+
+                        return selectedNames.every(
+                            function(name) {
+
+                                return combination.some(
+                                    function(member) {
+
+                                        return (
+                                            member.name
+                                            ===
+                                            name
+                                        );
+
+                                    }
+                                );
+
+                            }
+                        );
+
+                    }
+                );
+
+
+            displayCombinations(
+                filtered
+            );
+
+        }
+
+
+        /* =========================
+           組み合わせ生成
+           ========================= */
+
+        for (
+            let size = 1;
+            size <= members.length;
+            size++
+        ) {
+
+            makeCombination(
+                0,
+                [],
+                size
+            );
+
+        }
+
+
+        function makeCombination(
+            start,
+            combination,
+            size
+        ) {
+
+            if (
+                combination.length === size
+            ) {
+
+                allCombinations.push(
+                    [...combination]
+                );
+
+                return;
+
+            }
+
+
+            for (
+                let i = start;
+                i < members.length;
+                i++
+            ) {
+
+                combination.push(
+                    members[i]
+                );
+
+
+                makeCombination(
+                    i + 1,
+                    combination,
+                    size
+                );
+
+
+                combination.pop();
+
+            }
+
+        }
+
+
+        /* =========================
+           組み合わせキー
+           ========================= */
+
+        function getCombinationKey(
+            combination
+        ) {
+
+            return combination
+                .map(
+                    function(member) {
+
+                        return member.name;
+
+                    }
+                )
+                .join("|");
+
+        }
+
+
+        /* =========================
+           結果表示
+           ========================= */
+
+        function displayCombinations(
+            combinations
+        ) {
+
+            result.innerHTML = "";
+
+
+            for (
+                let combination
+                of combinations
+            ) {
+
+                const card =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                card.className =
+                    "combination-card";
+
+
+                const photoArea =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                photoArea.className =
+                    "combination-members";
+
+
+                for (
+                    let member
+                    of combination
+                ) {
+
+                    const memberBox =
+                        document.createElement(
+                            "div"
+                        );
+
+
+                    memberBox.className =
+                        "combination-member";
+
+
+                    const image =
+                        document.createElement(
+                            "img"
+                        );
+
+
+                    image.src =
+                        member.photo;
+
+
+                    image.className =
+                        "combination-photo";
+
+
+                    const name =
+                        document.createElement(
+                            "span"
+                        );
+
+
+                    name.textContent =
+                        member.name;
+
+
+                    memberBox.appendChild(
+                        image
+                    );
+
+
+                    memberBox.appendChild(
+                        name
+                    );
+
+
+                    photoArea.appendChild(
+                        memberBox
+                    );
+
+                }
+
+
+                const input =
+                    document.createElement(
+                        "input"
+                    );
+
+
+                input.type =
+                    "text";
+
+
+                input.placeholder =
+                    "コンビ名";
+
+
+                const key =
+                    getCombinationKey(
+                        combination
+                    );
+
+
+                /*
+                 * 以前の名前を復元
+                 */
+
+                if (
+                    combinationNames.has(
+                        key
+                    )
+                ) {
+
+                    input.value =
+                        combinationNames.get(
+                            key
+                        );
+
+                }
+
+
+                /*
+                 * 入力した瞬間に保存
+                 */
+
+                input.addEventListener(
+                    "input",
+                    function() {
+
+                        combinationNames.set(
+                            key,
+                            input.value
+                        );
+
+
+                        localStorage.setItem(
+                            "combinationNames",
+                            JSON.stringify(
+                                Object.fromEntries(
+                                    combinationNames
+                                )
+                            )
+                        );
+
+                    }
+                );
+
+
+                card.appendChild(
+                    photoArea
+                );
+
+
+                card.appendChild(
+                    input
+                );
+
+
+                result.appendChild(
+                    card
+                );
+
+            }
+
+        }
+
+
+        /* 最初は全部表示 */
+
+        displayCombinations(
+            allCombinations
+        );
+
+
+        /* =========================
+           絞り込み解除
+           ========================= */
+
+        function clearFilter() {
+
+            selectedNames = [];
+
+
+            updateFilter();
+
+        }
+
+
+        /* =========================
+           グループ保存
+           ========================= */
+
+        function saveGroups() {
+
+            const groupName =
+                document
+                    .getElementById(
+                        "groupName"
+                    )
+                    .value
+                    .trim();
+
+
+            if (
+                groupName === ""
+            ) {
+
+                alert(
+                    "グループ名を入力してください。"
+                );
+
+                return;
+
+            }
+
+
+            const cards =
+                document.querySelectorAll(
+                    ".combination-card"
+                );
+
+
+            if (
+                cards.length === 0
+            ) {
+
+                alert(
+                    "保存するコンビがありません。"
+                );
+
+                return;
+
+            }
+
+
+            const groups =
+                JSON.parse(
+                    localStorage.getItem(
+                        "groups"
+                    )
+                ) || [];
+
+
+            /*
+             * 表示されている組み合わせだけ保存
+             */
+
+            for (
+                let card
+                of cards
+            ) {
+
+                const memberNames = [];
+
+
+                const memberBoxes =
+                    card.querySelectorAll(
+                        ".combination-member"
+                    );
+
+
+                for (
+                    let box
+                    of memberBoxes
+                ) {
+
+                    memberNames.push(
+                        box.querySelector(
+                            "span"
+                        ).textContent
+                    );
+
+                }
+
+
+                const memberObjects =
+                    memberNames.map(
+                        function(name) {
+
+                            return members.find(
+                                function(member) {
+
+                                    return (
+                                        member.name
+                                        ===
+                                        name
+                                    );
+
+                                }
+                            );
+
+                        }
+                    ).filter(
+                        function(member) {
+
+                            return member;
+
+                        }
+                    );
+
+
+                const key =
+                    memberNames.join("|");
+
+
+                const input =
+                    card.querySelector(
+                        "input"
+                    );
+
+
+                const combinationName =
+                    input.value.trim();
+
+
+                combinationNames.set(
+                    key,
+                    combinationName
+                );
+
+
+                groups.push({
+
+                    groupName:
+                        groupName,
+
+                    name:
+                        combinationName,
+
+                    members:
+                        memberObjects,
+
+                    createdAt:
+                        new Date().toISOString()
+
+                });
+
+            }
+
+
+            localStorage.setItem(
+                "groups",
+                JSON.stringify(
+                    groups
+                )
+            );
+
+
+            localStorage.setItem(
+                "combinationNames",
+                JSON.stringify(
+                    Object.fromEntries(
+                        combinationNames
+                    )
+                )
+            );
+
+
+            alert(
+                "保存しました！"
+            );
+
+
+            location.href =
+                "list.html";
+
+        }
+
+
+        /* =========================
+           設定
+           ========================= */
+
+        loadSettings();
+
+
+        function loadSettings() {
+
+            const fontSize =
+                localStorage.getItem(
+                    "fontSize"
+                );
+
+
+            if (
+                fontSize === "large"
+            ) {
+
+                document.body.classList.add(
+                    "large-font"
+                );
+
+            }
+
+
+            if (
+                fontSize === "small"
+            ) {
+
+                document.body.classList.add(
+                    "small-font"
+                );
+
+            }
+
+
+            const theme =
+                localStorage.getItem(
+                    "backgroundColor"
+                );
+
+
+            if (
+                theme !== null
+            ) {
+
+                document.body.classList.add(
+                    "theme-" + theme
+                );
+
+            }
+
+        }
+
+    </script>
+
+</body>
+
+</html>

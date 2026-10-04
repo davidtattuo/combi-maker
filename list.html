@@ -1,0 +1,473 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>グループ一覧</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css">
+
+</head>
+
+
+<body>
+
+    <h1>グループ一覧</h1>
+
+
+    <div id="groupList"></div>
+
+
+    <button
+        class="back-button"
+        onclick="location.href='index.html'">
+        ホームに戻る
+    </button>
+
+
+    <script>
+
+        let savedGroups =
+            JSON.parse(
+                localStorage.getItem(
+                    "groups"
+                )
+            ) || [];
+
+
+        const groupList =
+            document.getElementById(
+                "groupList"
+            );
+
+
+        const groupNames = [];
+
+
+        /*
+         * グループ名をまとめる
+         */
+
+        for (
+            let group
+            of savedGroups
+        ) {
+
+            if (
+                !groupNames.includes(
+                    group.groupName
+                )
+            ) {
+
+                groupNames.push(
+                    group.groupName
+                );
+
+            }
+
+        }
+
+
+        if (
+            groupNames.length === 0
+        ) {
+
+            const message =
+                document.createElement(
+                    "p"
+                );
+
+
+            message.textContent =
+                "まだグループがありません。";
+
+
+            groupList.appendChild(
+                message
+            );
+
+        }
+
+
+        /*
+         * グループカード
+         */
+
+        for (
+            let groupName
+            of groupNames
+        ) {
+
+            const card =
+                document.createElement(
+                    "div"
+                );
+
+
+            card.className =
+                "group-card";
+
+
+            const title =
+                document.createElement(
+                    "h2"
+                );
+
+
+            title.textContent =
+                groupName;
+
+
+            title.onclick =
+                function() {
+
+                    localStorage.setItem(
+                        "selectedGroup",
+                        groupName
+                    );
+
+
+                    location.href =
+                        "group.html";
+
+                };
+
+
+            card.appendChild(
+                title
+            );
+
+
+            /*
+             * 個数
+             */
+
+            const count =
+                savedGroups.filter(
+                    function(group) {
+
+                        return (
+                            group.groupName
+                            ===
+                            groupName
+                        );
+
+                    }
+                ).length;
+
+
+            const countText =
+                document.createElement(
+                    "p"
+                );
+
+
+            countText.textContent =
+                count +
+                "個の組み合わせ";
+
+
+            card.appendChild(
+                countText
+            );
+
+
+            /*
+             * 開く
+             */
+
+            const openButton =
+                document.createElement(
+                    "button"
+                );
+
+
+            openButton.textContent =
+                "グループを開く";
+
+
+            openButton.className =
+                "small-button";
+
+
+            openButton.onclick =
+                function() {
+
+                    localStorage.setItem(
+                        "selectedGroup",
+                        groupName
+                    );
+
+
+                    location.href =
+                        "group.html";
+
+                };
+
+
+            card.appendChild(
+                openButton
+            );
+
+
+            /*
+             * 名前編集
+             */
+
+            const editButton =
+                document.createElement(
+                    "button"
+                );
+
+
+            editButton.textContent =
+                "グループ名を編集";
+
+
+            editButton.className =
+                "small-button";
+
+
+            editButton.onclick =
+                function() {
+
+                    editGroup(
+                        groupName
+                    );
+
+                };
+
+
+            card.appendChild(
+                editButton
+            );
+
+
+            /*
+             * 削除
+             */
+
+            const deleteButton =
+                document.createElement(
+                    "button"
+                );
+
+
+            deleteButton.textContent =
+                "グループを削除";
+
+
+            deleteButton.className =
+                "small-button";
+
+
+            deleteButton.onclick =
+                function() {
+
+                    deleteGroup(
+                        groupName
+                    );
+
+                };
+
+
+            card.appendChild(
+                deleteButton
+            );
+
+
+            groupList.appendChild(
+                card
+            );
+
+        }
+
+
+        /* =========================
+           グループ名変更
+           ========================= */
+
+        function editGroup(
+            oldName
+        ) {
+
+            const newName =
+                prompt(
+                    "新しいグループ名を入力してください。",
+                    oldName
+                );
+
+
+            if (
+                newName === null
+            ) {
+
+                return;
+
+            }
+
+
+            const trimmed =
+                newName.trim();
+
+
+            if (
+                trimmed === ""
+            ) {
+
+                alert(
+                    "グループ名を入力してください。"
+                );
+
+                return;
+
+            }
+
+
+            for (
+                let group
+                of savedGroups
+            ) {
+
+                if (
+                    group.groupName
+                    ===
+                    oldName
+                ) {
+
+                    group.groupName =
+                        trimmed;
+
+                }
+
+            }
+
+
+            localStorage.setItem(
+                "groups",
+                JSON.stringify(
+                    savedGroups
+                )
+            );
+
+
+            location.reload();
+
+        }
+
+
+        /* =========================
+           グループ削除
+           ========================= */
+
+        function deleteGroup(
+            groupName
+        ) {
+
+            if (
+                !confirm(
+                    "このグループを削除しますか？"
+                )
+            ) {
+
+                return;
+
+            }
+
+
+            savedGroups =
+                savedGroups.filter(
+                    function(group) {
+
+                        return (
+                            group.groupName
+                            !==
+                            groupName
+                        );
+
+                    }
+                );
+
+
+            localStorage.setItem(
+                "groups",
+                JSON.stringify(
+                    savedGroups
+                )
+            );
+
+
+            location.reload();
+
+        }
+
+
+        /* =========================
+           設定
+           ========================= */
+
+        loadSettings();
+
+
+        function loadSettings() {
+
+            const fontSize =
+                localStorage.getItem(
+                    "fontSize"
+                );
+
+
+            if (
+                fontSize === "large"
+            ) {
+
+                document.body.classList.add(
+                    "large-font"
+                );
+
+            }
+
+
+            if (
+                fontSize === "small"
+            ) {
+
+                document.body.classList.add(
+                    "small-font"
+                );
+
+            }
+
+
+            const theme =
+                localStorage.getItem(
+                    "backgroundColor"
+                );
+
+
+            if (
+                theme !== null
+            ) {
+
+                document.body.classList.add(
+                    "theme-" + theme
+                );
+
+            }
+
+        }
+
+    </script>
+
+</body>
+
+</html>
