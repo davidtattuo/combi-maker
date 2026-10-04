@@ -1053,3 +1053,30 @@ body.small-font input {
     }
 
 }
+
+/* =========================
+   スマホドラッグ対応
+   ========================= */
+
+.draggable-member {
+    touch-action: none;
+}
+
+.drag-ghost {
+    width: 85px;
+    padding: 10px;
+    background: white;
+    border-radius: 18px;
+    box-shadow:
+        0 10px 30px
+        rgba(0, 0, 0, 0.25);
+    opacity: 0.85;
+}
+
+@media (max-width: 600px) {
+
+    .drag-ghost {
+        width: 75px;
+    }
+
+}
